@@ -1,0 +1,1133 @@
+<title>PassDown — Clickable Prototype</title>
+<style>
+  :root{
+    --brand:#1F5C8B; --brand-dark:#163F5F; --brand-light:#E8F1F8;
+    --ink:#1A1A1A; --muted:#5C6770; --canvas:#F4F6F8; --surface:#FFFFFF;
+    --danger:#B3261E; --success:#2E7D32;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{margin:0;}
+  .stage{display:flex; flex-direction:column; align-items:center; gap:14px; padding:18px 8px 40px; font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+  .hint{max-width:392px; color:var(--muted); font-size:13px; line-height:1.5; text-align:center;}
+  .hint b{color:var(--ink); font-weight:600;}
+
+  .phone{width:392px; max-width:96vw; height:760px; background:var(--canvas);
+    border:10px solid #111; border-radius:42px; overflow:hidden; position:relative;
+    display:flex; flex-direction:column; box-shadow:0 18px 50px rgba(0,0,0,.28);}
+  .notch{position:absolute; top:10px; left:50%; transform:translateX(-50%); width:130px; height:24px; background:#111; border-radius:0 0 16px 16px; z-index:30;}
+
+  .topbar{background:var(--brand); color:#fff; padding:26px 16px 12px; display:flex; align-items:center; gap:10px; min-height:64px; z-index:20;}
+  .topbar .title{font-size:19px; font-weight:600; flex:1;}
+  .iconbtn{background:transparent; border:none; color:#fff; padding:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; border-radius:10px;}
+  .iconbtn:active{background:rgba(255,255,255,.18);}
+  .iconbtn svg{width:24px; height:24px; stroke:#fff; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round;}
+
+  .body{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;}
+  .pad{padding:16px;}
+  .h1{font-size:23px; font-weight:700; color:var(--ink); margin:6px 0 2px;}
+  .sub{font-size:15px; color:var(--muted); margin:0 0 14px; line-height:1.45;}
+
+  .card{background:var(--surface); border:1px solid rgba(0,0,0,.06); border-radius:16px; padding:16px; margin-bottom:12px; cursor:pointer;}
+  .card:active{opacity:.7;}
+  .badge{width:48px; height:48px; border-radius:50%; background:var(--brand-light); display:flex; align-items:center; justify-content:center; margin-bottom:10px;}
+  .badge svg{width:24px; height:24px; stroke:var(--brand-dark); fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;}
+  .card .t{font-size:19px; font-weight:700; color:var(--ink); margin:0;}
+  .card .d{font-size:15px; color:var(--muted); margin:4px 0 0; line-height:1.4;}
+
+  .banner{margin:14px; border-radius:16px; padding:16px;}
+  .banner.connect{background:var(--brand-dark);}
+  .banner.reauth{background:var(--danger);}
+  .banner .bt{color:#fff; font-size:17px; font-weight:600; margin:0;}
+  .banner .bd{color:rgba(255,255,255,.92); font-size:14px; margin:6px 0 0; line-height:1.45;}
+  .banner .ba{background:#fff; border:none; border-radius:12px; padding:11px 18px; margin-top:12px; font-size:15px; font-weight:700; cursor:pointer;}
+  .banner.connect .ba{color:var(--brand-dark);} .banner.reauth .ba{color:var(--danger);}
+
+  .pill{display:inline-flex; align-items:center; gap:7px; background:#E8F5EC; color:var(--success); font-size:13px; font-weight:600; padding:6px 12px; border-radius:999px; margin:0 16px;}
+  .dot{width:9px; height:9px; border-radius:50%; background:var(--success);}
+
+  .item{display:flex; align-items:center; gap:13px; background:var(--surface); border:1px solid rgba(0,0,0,.06); border-radius:14px; padding:13px 14px; margin-bottom:10px; cursor:pointer;}
+  .item:active{opacity:.7;}
+  .ikon{width:42px; height:42px; border-radius:11px; flex:none; display:flex; align-items:center; justify-content:center;}
+  .ikon svg{width:21px; height:21px; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;}
+  .ikon.article{background:#EAF1F8;} .ikon.article svg{stroke:#1F5C8B;}
+  .ikon.video{background:#FBE9E7;} .ikon.video svg{stroke:#C0392B;}
+  .ikon.pdf{background:#FDEFE2;} .ikon.pdf svg{stroke:#B9770E;}
+  .ikon.link{background:#EAF6EF;} .ikon.link svg{stroke:#2E7D32;}
+  .ikon.image{background:#FCE7F3;} .ikon.image svg{stroke:#BE185D;}
+  .item .it{font-size:16px; font-weight:600; color:var(--ink); margin:0;}
+  .item .im{font-size:13px; color:var(--muted); margin:2px 0 0;}
+
+  .empty{background:var(--surface); border:1px dashed rgba(0,0,0,.14); border-radius:16px; padding:34px 20px; text-align:center; color:var(--muted); font-size:15px; line-height:1.5;}
+
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .tile{border-radius:18px; padding:15px; min-height:122px; display:flex; flex-direction:column; justify-content:space-between; cursor:pointer; border:none; touch-action:none;}
+  .tile:active{opacity:.85;}
+  .tile.droptarget{outline:3px dashed rgba(255,255,255,.9); outline-offset:-4px;}
+  .tile-top{display:flex; justify-content:space-between; align-items:flex-start;}
+  .tile-ic{width:46px; height:46px; border-radius:50%; background:rgba(255,255,255,.22); display:flex; align-items:center; justify-content:center;}
+  .tile-t{color:#fff; font-size:17px; font-weight:700; margin:10px 0 0; line-height:1.2;}
+  .tile-yours{font-size:11px; font-weight:700; color:#fff; background:rgba(255,255,255,.25); padding:3px 9px; border-radius:999px;}
+  .tile-new{background:var(--surface); border:2px dashed rgba(31,92,139,.35);}
+  .tile-new .tile-ic{background:var(--brand-light);}
+  .tile-new .tile-t{color:var(--brand);}
+
+  .seclabel{font-size:12px; font-weight:700; color:var(--muted); margin:18px 0 8px; text-transform:uppercase; letter-spacing:.05em;}
+  .navrow{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+  .navchip{background:var(--surface); border:1px solid rgba(0,0,0,.1); border-radius:999px; padding:8px 15px; font-size:14px; font-weight:700; color:var(--brand); cursor:pointer;}
+  .navchip:active{opacity:.7;}
+  .navchip:disabled{opacity:.35; cursor:default; color:var(--muted);}
+
+  .gallery{display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;}
+  .thumb{position:relative; aspect-ratio:1/1; border-radius:10px; overflow:hidden; cursor:pointer; background-size:cover; background-position:center;}
+  .thumb:active{opacity:.85;}
+  .thumb .cap{position:absolute; left:0; right:0; bottom:0; padding:16px 7px 6px; color:#fff; font-size:11px; font-weight:600; line-height:1.2; background:linear-gradient(transparent, rgba(0,0,0,.6));}
+
+  .seg{display:flex; background:var(--brand-light); border-radius:12px; padding:3px; gap:3px; margin-bottom:14px;}
+  .seg button{flex:1; border:none; background:transparent; padding:9px; border-radius:9px; font-size:14px; font-weight:700; color:var(--brand-dark); cursor:pointer;}
+  .seg button.on{background:#fff; color:var(--brand);}
+  .pernav{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+  .pernav .lbl{font-size:18px; font-weight:700; color:var(--ink);}
+  .calgrid{display:grid; grid-template-columns:repeat(7,1fr); gap:3px;}
+  .caldow{font-size:11px; font-weight:700; color:var(--muted); text-align:center; padding:2px 0;}
+  .calcell{min-height:60px; background:var(--surface); border:1px solid rgba(0,0,0,.06); border-radius:8px; padding:3px; cursor:pointer; overflow:hidden;}
+  .calcell.dim{opacity:.38;}
+  .calcell.today{border:2px solid var(--brand);}
+  .caldate{font-size:12px; font-weight:700; color:var(--ink); margin-bottom:1px;}
+  .calev{font-size:10px; background:var(--brand-light); color:var(--brand-dark); border-radius:4px; padding:1px 3px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.3;}
+  .dayev{display:flex; gap:12px; background:var(--surface); border:1px solid rgba(0,0,0,.06); border-radius:12px; padding:13px; margin-bottom:8px; cursor:pointer;}
+  .dayev .tm{font-size:13px; font-weight:700; color:var(--brand); min-width:62px;}
+
+  .fab{position:absolute; right:18px; bottom:22px; width:62px; height:62px; border-radius:50%; background:var(--brand); border:none; box-shadow:0 8px 20px rgba(31,92,139,.45); cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:25;}
+  .fab svg{width:30px; height:30px; stroke:#fff; stroke-width:2.6; stroke-linecap:round;}
+
+  .choice{display:flex; align-items:center; gap:14px; background:var(--surface); border:1px solid rgba(0,0,0,.06); border-radius:16px; padding:18px; margin-bottom:12px; cursor:pointer;}
+  .choice:active{opacity:.7;}
+  .choice .ct{font-size:18px; font-weight:600; color:var(--ink); margin:0;}
+  .choice .cd{font-size:14px; color:var(--muted); margin:2px 0 0;}
+
+  .field label{display:block; font-size:14px; font-weight:600; color:var(--ink); margin:14px 0 6px;}
+  .field input, .field textarea, .field select{width:100%; border:1px solid rgba(0,0,0,.15); border-radius:12px; padding:13px; font-size:16px; font-family:inherit; color:var(--ink); background:#fff;}
+  .field select{appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%235C6770' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; padding-right:38px;}
+  .field textarea{min-height:150px; resize:none;}
+  .primary{width:100%; background:var(--brand); color:#fff; border:none; border-radius:14px; padding:16px; font-size:17px; font-weight:700; cursor:pointer; margin-top:20px;}
+  .primary:active{opacity:.85;}
+  .secondary{width:100%; background:transparent; color:var(--brand); border:none; padding:14px; font-size:15px; font-weight:600; cursor:pointer; margin-top:4px;}
+
+  .savechip{font-size:13px; color:var(--muted); background:var(--brand-light); padding:10px 12px; border-radius:10px; margin-bottom:4px;}
+  .savechip b{color:var(--brand-dark);}
+
+  .progwrap{height:14px; background:#E3E8ED; border-radius:999px; overflow:hidden; margin:14px 0 8px;}
+  .progbar{height:100%; width:0%; background:var(--brand); border-radius:999px; transition:width .25s linear;}
+
+  .lock{width:74px; height:74px; border-radius:50%; background:var(--brand-light); display:flex; align-items:center; justify-content:center; margin:8px auto 16px;}
+  .lock svg{width:36px; height:36px; stroke:var(--brand-dark); fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;}
+  .qr{width:170px; height:170px; margin:8px auto 4px; border-radius:14px; background:
+     linear-gradient(90deg,#111 50%,transparent 0) 0 0/22px 22px,
+     linear-gradient(#111 50%,transparent 0) 0 0/22px 22px, #fff; border:6px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.1); opacity:.92;}
+  .member{display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid rgba(0,0,0,.06);}
+  .avatar{width:40px; height:40px; border-radius:50%; background:var(--brand); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:15px;}
+  .roletag{margin-left:auto; font-size:12px; font-weight:700; color:var(--brand-dark); background:var(--brand-light); padding:4px 10px; border-radius:999px;}
+  .memrow{border-bottom:1px solid rgba(0,0,0,.06); padding-bottom:6px; margin-bottom:4px;}
+  .mactions{display:flex; gap:8px; padding:2px 0 6px 52px; flex-wrap:wrap;}
+  .mbtn{font-size:12px; font-weight:600; color:var(--brand-dark); background:var(--brand-light); border:none; border-radius:999px; padding:5px 12px; cursor:pointer; font-family:inherit;}
+  .mbtn.danger{color:var(--danger); background:#FDECEC;}
+
+  .setrow{display:flex; align-items:center; gap:12px; background:var(--surface); border:1px solid rgba(0,0,0,.06); border-radius:14px; padding:15px; margin-bottom:11px; cursor:pointer;}
+  .setrow .st{font-size:16px; font-weight:600; color:var(--ink); margin:0;} .setrow .sd{font-size:13px; color:var(--muted); margin:2px 0 0;}
+  .iconpick{width:54px; height:54px; border-radius:14px; display:flex; align-items:center; justify-content:center; cursor:pointer;}
+  .protonote{font-size:11px; color:#9aa3ab; text-align:center; padding:6px 16px;}
+</style>
+
+<div class="stage">
+  <div class="phone" id="phone">
+    <div class="notch"></div>
+    <div class="topbar">
+      <button class="iconbtn" id="backBtn" style="display:none" onclick="goBack()" aria-label="Back">
+        <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <button class="iconbtn" id="homeBtn" style="display:none" onclick="reset('home')" aria-label="All folders (home)">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      </button>
+      <div class="title" id="topTitle">PassDown</div>
+      <button class="iconbtn" id="searchBtn" style="display:none" onclick="nav('search')" aria-label="Search">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      </button>
+      <button class="iconbtn" id="tagBtn" style="display:none" onclick="nav('tagged')" aria-label="Tagged on you">
+        <svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.4" fill="#fff" stroke="none"/></svg>
+      </button>
+      <button class="iconbtn" id="settingsBtn" onclick="nav('settings')" aria-label="Settings">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+    <div class="body" id="body"></div>
+    <button class="fab" id="fab" style="display:none" onclick="addFromCurrent()" aria-label="Add">
+      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+  <div class="hint" id="hint"></div>
+  <div class="protonote">Clickable design prototype · cloud upload &amp; sign-in are simulated for preview</div>
+</div>
+
+<script>
+const ICONS = {
+  home:'<path d="M3 11l9-8 9 8M5 9v11h14V9"/>',
+  cash:'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/>',
+  recipe:'<path d="M7 2v20M17 2v6a3 3 0 0 1-3 3 3 3 0 0 0 3 3v6"/><path d="M4 8a3 3 0 0 0 6 0V2"/>',
+  notes:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/>',
+  article:'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>',
+  video:'<rect x="2" y="5" width="14" height="14" rx="2"/><path d="M16 9l6-3v12l-6-3"/>',
+  pdf:'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/>',
+  link:'<path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1.5-1.5"/>',
+  lock:'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  health:'<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/>',
+  star:'<path d="M12 3l2.9 6.3 6.6.6-5 4.4 1.5 6.4L12 17.8 6 21l1.5-6.4-5-4.4 6.6-.6z"/>',
+  shield:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
+  paw:'<circle cx="6" cy="11" r="2"/><circle cx="10" cy="6" r="2"/><circle cx="14" cy="6" r="2"/><circle cx="18" cy="11" r="2"/><path d="M8 17a4 4 0 0 1 8 0 3 3 0 0 1-3 3h-2a3 3 0 0 1-3-3z"/>',
+  plane:'<path d="M2 12l20-8-8 20-2.5-7.5L4 14z"/>',
+  image:'<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="9" r="1.8"/><path d="M21 16l-5-5L5 21"/>',
+  calendar:'<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>'
+};
+function svg(name,cls){return '<span class="ikon '+(cls||'')+'"><svg viewBox="0 0 24 24">'+(ICONS[name]||ICONS.notes)+'</svg></span>';}
+function svgRaw(name,size,color){return '<svg viewBox="0 0 24 24" width="'+size+'" height="'+size+'" fill="none" stroke="'+(color||'#163F5F')+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(ICONS[name]||ICONS.notes)+'</svg>';}
+function svgFolder(name){return '<span class="ikon article"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="#1F5C8B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(ICONS[name]||ICONS.notes)+'</svg></span>';}
+
+const ME = 'You';
+const PHOTO_GRADIENTS = [
+  'linear-gradient(135deg,#f6d365,#fda085)',
+  'linear-gradient(135deg,#a1c4fd,#c2e9fb)',
+  'linear-gradient(135deg,#84fab0,#8fd3f4)',
+  'linear-gradient(135deg,#fbc2eb,#a6c1ee)',
+  'linear-gradient(135deg,#fccb90,#d57eeb)',
+  'linear-gradient(135deg,#e0c3fc,#8ec5fc)',
+  'linear-gradient(135deg,#f093fb,#f5576c)',
+  'linear-gradient(135deg,#5ee7df,#b490ca)',
+  'linear-gradient(135deg,#fddb92,#d1fdff)',
+];
+const CATEGORIES = [
+  {id:'home_auto', title:'Home & Auto Care', icon:'home', color:'#1F5C8B', blurb:'Water main, breaker box, oil changes, the stuff you forget.',
+   subfolders:[
+     {id:'sub_car', title:'Car maintenance', items:[
+       {kind:'article', author:ME, title:'Oil change schedule', meta:'Article', body:'Every 5,000 miles. The Honda takes 0W-20 synthetic. Receipts are in the glovebox.'},
+     ]},
+   ],
+   items:[
+     {kind:'article', author:ME, title:'Where the water main shutoff is', meta:'Article · updated Apr 2', body:'The main shutoff is in the basement, on the wall behind the furnace. Turn the red handle a quarter turn clockwise to stop all water to the house.'},
+     {kind:'video', author:ME, title:'How to replace the furnace filter', meta:'Video · 2:14'},
+     {kind:'pdf', author:ME, title:'Breaker box map.pdf', meta:'PDF · 1.2 MB'},
+   ]},
+  {id:'family_finance', title:'Family Finance', icon:'cash', color:'#2E7D32', blurb:"Emergency checklist, deed locations, the accountant's number.",
+   items:[
+     {kind:'article', author:ME, title:'Emergency checklist', meta:'Article · updated Jan 9', body:'1. Call the accountant, Susan Mills.\n2. The safe deposit box key is in the kitchen drawer.\n3. Life insurance is with Northwestern — policy number in the deeds folder.'},
+     {kind:'article', author:ME, title:'Where the physical deeds are kept', meta:'Article', body:'House deed and car titles are in the fireproof box in the bedroom closet, top shelf.'},
+     {kind:'link', author:ME, title:'Susan Mills, CPA — contact', meta:'Link', url:'https://susanmillscpa.example.com', body:'Our accountant for the last 15 years. She has copies of all tax returns and knows the estate plan. Call before making any big financial decisions.'},
+   ]},
+  {id:'family_recipes', title:'Family Recipes', icon:'recipe', color:'#C2410C', blurb:'Traditions worth keeping — with short how-to videos.',
+   items:[
+     {kind:'video', author:'Pat A.', title:"Grandma's Sunday gravy", meta:'Video · 5:30', tags:['You','Jordan M.'], body:'Mom finally let me film her making the Sunday gravy. Tagging you so you have it forever.'},
+     {kind:'pdf', author:ME, title:'Holiday cookie recipe.pdf', meta:'PDF · 480 KB'},
+   ]},
+  {id:'notes_instructions', title:'Notes & Instructions', icon:'notes', color:'#6A4C93', blurb:'Wi-Fi password, the TV remote, notes for the house-sitter.',
+   items:[
+     {kind:'article', author:ME, title:'Home Wi-Fi name & password', meta:'Article', body:'Network: Linden-Street-5G\nPassword: maple-river-42\nThe router is in the hall closet if it needs restarting.'},
+     {kind:'article', author:'Jordan M.', title:'Smart TV — instructions for house-sitters', meta:'Article', tags:['You'], body:'Use the silver remote. Press Home, then pick Netflix. Our login is saved.'},
+   ]},
+  {id:'memories', title:'Memories', icon:'image', color:'#BE185D', gallery:true, blurb:'Family photos — the moments worth keeping.',
+   items:[
+     {kind:'image', author:ME, title:'Summer at the lake', meta:'Photo · Jul 2023', thumb:PHOTO_GRADIENTS[0]},
+     {kind:'image', author:'Pat A.', title:"Dad's 70th birthday", meta:'Photo · May 2022', tags:['You'], thumb:PHOTO_GRADIENTS[6]},
+     {kind:'image', author:ME, title:'Christmas morning', meta:'Photo · Dec 2021', thumb:PHOTO_GRADIENTS[2]},
+     {kind:'image', author:ME, title:'Grandkids at the beach', meta:'Photo · Aug 2023', thumb:PHOTO_GRADIENTS[3]},
+     {kind:'image', author:'Jordan M.', title:'Wedding day', meta:'Photo · Jun 2019', thumb:PHOTO_GRADIENTS[4]},
+     {kind:'image', author:ME, title:'Backyard barbecue', meta:'Photo · Jul 2022', thumb:PHOTO_GRADIENTS[5]},
+   ]},
+];
+
+let state = {connected:false, family:false, destCat:'home_auto', isAdmin:true};
+let stack = [];
+let current = null;
+let ctx = {};
+let folderSeq = 0;
+let subSeq = 0;
+let newFolderIcon = 'health';
+let newFolderName = '';
+const FAMILY = ['You','Pat A.','Jordan M.','Sam K.'];
+let composeTags = [];
+let searchQuery = '';
+let calView = 'month';
+let calCursor = new Date();
+let calLinked = null;          // 'google' | 'apple' | null
+let calPermission = 'everyone'; // 'everyone' | 'admin' (admin decides)
+let calSeq = 3;
+let calEvents = [
+  {id:'cal1', title:"Dad's birthday dinner", date:'2026-06-20', time:'18:00', notes:'Olive Garden at 6pm', by:'Pat A.'},
+  {id:'cal2', title:'Call with accountant (Susan)', date:'2026-06-23', time:'10:30', notes:'', by:'You'},
+  {id:'cal3', title:'Wedding anniversary', date:'2026-06-27', time:'', notes:'30 years!', by:'You'},
+];
+
+// --- Family Hub members & seats --------------------------------------------
+// The one-time purchase grants 6 seats. The admin can add/remove/reassign
+// members and buy extra seats beyond the 6 (price TBD — ~$2 placeholder).
+const SEAT_PRICE = 2;          // USD per extra seat — NOT FINAL, TBD
+let seatsTotal = 6;            // included with the one-time purchase
+let memberSeq = 0;
+let familyMembers = [
+  {id:'you', name:'You', email:'you@email.com', initials:'YOU', role:'admin', isMe:true},
+  {id:'m1',  name:'Pat A.', email:'pat@email.com', initials:'PA', role:'member'},
+  {id:'m2',  name:'Jordan M.', email:'jordan@email.com', initials:'JM', role:'member'},
+];
+function seatsUsed(){ return familyMembers.length; }
+function adminCount(){ return familyMembers.filter(m=>m.role==='admin').length; }
+function initialsOf(name){
+  const p = String(name).trim().split(/\s+/);
+  if(p.length===1) return p[0].slice(0,2).toUpperCase();
+  return (p[0][0]+p[p.length-1][0]).toUpperCase();
+}
+function addMember(){
+  if(!state.isAdmin) return;
+  if(seatsUsed() >= seatsTotal){ alert('All '+seatsTotal+' seats are in use. Buy more seats to invite another member.'); return; }
+  const name = (prompt("New member's name?")||'').trim(); if(!name) return;
+  const email = (prompt("Their email address?")||'').trim(); if(!email) return;
+  memberSeq++;
+  familyMembers.push({id:'mx'+memberSeq, name:name, email:email, initials:initialsOf(name), role:'member'});
+  render('family');
+}
+function removeMember(id){
+  if(!state.isAdmin) return;
+  const m = familyMembers.find(x=>x.id===id); if(!m) return;
+  if(m.isMe){ alert('You own this Family Hub. Reassign the admin role to someone else before removing yourself.'); return; }
+  if(!confirm('Remove '+m.name+"? They'll lose access to the vault, and their seat frees up for someone new.")) return;
+  familyMembers = familyMembers.filter(x=>x.id!==id);
+  render('family');
+}
+function toggleRole(id){
+  if(!state.isAdmin) return;
+  const m = familyMembers.find(x=>x.id===id); if(!m) return;
+  if(m.role==='admin'){
+    if(adminCount()<=1){ alert('There must always be at least one admin. Make someone else an admin first.'); return; }
+    m.role='member';
+  } else { m.role='admin'; }
+  render('family');
+}
+function buySeats(){
+  if(!state.isAdmin) return;
+  const n = parseInt(prompt('How many extra seats would you like to add?\n(About $'+SEAT_PRICE+' each — final price still TBD)','1'),10);
+  if(!n || n<1) return;
+  if(!confirm('Add '+n+' seat'+(n>1?'s':'')+' for about $'+(n*SEAT_PRICE)+'?\n\nPrototype only — no real charge, and pricing isn\'t final.')) return;
+  seatsTotal += n;
+  render('family');
+}
+function memberRow(m){
+  const tag = m.role==='admin' ? '<span class="roletag">Admin</span>' : '';
+  let actions = '';
+  if(state.isAdmin){
+    const btns = [];
+    btns.push(`<button class="mbtn" onclick="toggleRole('${m.id}')">${m.role==='admin'?'Make member':'Make admin'}</button>`);
+    if(!m.isMe) btns.push(`<button class="mbtn danger" onclick="removeMember('${m.id}')">Remove</button>`);
+    actions = `<div class="mactions">${btns.join('')}</div>`;
+  }
+  return `<div class="memrow">
+      <div class="member" style="border-bottom:none;">
+        <div class="avatar">${esc(m.initials)}</div>
+        <div style="min-width:0;"><p class="it">${esc(m.name)}${m.isMe?' <span style="color:var(--muted);font-weight:400">(you)</span>':''}</p><p class="im">${esc(m.email)}</p></div>
+        ${tag}
+      </div>${actions}
+    </div>`;
+}
+
+function setHint(h){document.getElementById('hint').innerHTML = h;}
+function nav(screen, c){ stack.push({screen:current, ctx}); ctx = c||{}; render(screen); }
+function goBack(){ const p = stack.pop(); if(p){ ctx = p.ctx; render(p.screen, true); } }
+function reset(screen, c){ stack=[]; ctx=c||{}; render(screen); }
+// Resolve a "location" by id — a top-level folder OR a sub-folder. Sub-folders
+// come back wrapped with a reference to their parent. The .items array is the
+// real one either way, so push/splice mutate the shared vault in place.
+function cat(id){
+  for(const c of CATEGORIES){ if(c.id===id) return c; }
+  for(const c of CATEGORIES){
+    const s = (c.subfolders||[]).find(s=>s.id===id);
+    if(s) return Object.assign({parent:c, isSub:true, color:c.color, icon:c.icon, gallery:c.gallery}, s);
+  }
+  return CATEGORIES[0];
+}
+function addItem(id, item){ if(!item._id) item._id = 'it'+(++idSeq); cat(id).items.unshift(item); }
+
+// Flat list of every place an item can live, with a display path.
+function allLocations(){
+  const out = [];
+  CATEGORIES.forEach(c=>{
+    out.push({id:c.id, title:c.title, path:c.title, icon:c.icon, items:c.items, gallery:c.gallery, isSub:false});
+    (c.subfolders||[]).forEach(s=>out.push({id:s.id, title:s.title, path:c.title+' › '+s.title, icon:c.icon, items:s.items, gallery:c.gallery, isSub:true}));
+  });
+  return out;
+}
+function locPath(id){ const L = allLocations().find(x=>x.id===id); return L ? L.path : cat(id).title; }
+
+// --- Favorites (private to the current user) --------------------------------
+let favorites = new Set();
+let idSeq = 0;
+// Give every existing item a stable id so favorites survive moves/reorders.
+function ensureIds(){ allLocations().forEach(L=>L.items.forEach(it=>{ if(!it._id) it._id = 'it'+(++idSeq); })); }
+function toggleFav(id){
+  if(favorites.has(id)) favorites.delete(id); else favorites.add(id);
+  render(current);
+}
+function starHtml(id, opts){
+  opts = opts || {};
+  const on = favorites.has(id);
+  const size = opts.big ? 28 : 22;
+  const fill = on ? '#F5B301' : 'none';
+  const stroke = on ? '#F5B301' : (opts.onPhoto ? '#ffffff' : '#9aa3ab');
+  const sh = opts.onPhoto ? 'filter:drop-shadow(0 1px 2px rgba(0,0,0,.55));' : '';
+  return `<span class="starbtn" onpointerdown="event.stopPropagation()" onclick="event.stopPropagation(); toggleFav('${id}')" style="display:inline-flex; padding:6px; cursor:pointer; ${sh}"><svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="${fill}" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.9 6.3 6.6.6-5 4.4 1.5 6.4L12 17.8 6 21l1.5-6.4-5-4.4 6.6-.6z"/></svg></span>`;
+}
+
+// --- Calendar ---------------------------------------------------------------
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const DOW_FULL=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+function pad2(n){ return String(n).padStart(2,'0'); }
+function iso(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); }
+function eventsOn(ds){ return calEvents.filter(e=>e.date===ds).sort((a,b)=>(a.time||'99').localeCompare(b.time||'99')); }
+function weekStart(d){ const s=new Date(d); s.setDate(d.getDate()-d.getDay()); s.setHours(0,0,0,0); return s; }
+function canEditCal(){ return state.isAdmin || calPermission==='everyone'; }
+function setCalView(v){ calView=v; render('calendar'); }
+function calShift(dir){ const d=new Date(calCursor); if(calView==='month') d.setMonth(d.getMonth()+dir); else d.setDate(d.getDate()+(calView==='week'?7:1)*dir); calCursor=d; render('calendar'); }
+function calOpenDay(ds){ const p=ds.split('-').map(Number); calCursor=new Date(p[0],p[1]-1,p[2]); calView='day'; render('calendar'); }
+function setCalLink(p){ calLinked = (p==='none'?null:p); goBack(); }
+function calLabel(){ const d=calCursor;
+  if(calView==='month') return MONTHS[d.getMonth()]+' '+d.getFullYear();
+  if(calView==='day') return DOW_FULL[d.getDay()]+', '+MONTHS[d.getMonth()].slice(0,3)+' '+d.getDate();
+  const s=weekStart(d), e=new Date(s); e.setDate(s.getDate()+6);
+  return MONTHS[s.getMonth()].slice(0,3)+' '+s.getDate()+' – '+MONTHS[e.getMonth()].slice(0,3)+' '+e.getDate()+', '+e.getFullYear();
+}
+function dayCell(dd,dim,todayIso){ const ds=iso(dd); const evs=eventsOn(ds);
+  let chips=evs.slice(0,2).map(e=>`<div class="calev">${esc(e.title)}</div>`).join('');
+  if(evs.length>2) chips+=`<div class="calev" style="background:none; color:var(--muted); padding:0 2px;">+${evs.length-2}</div>`;
+  return `<div class="calcell ${dim?'dim':''} ${ds===todayIso?'today':''}" onclick="calOpenDay('${ds}')"><div class="caldate">${dd.getDate()}</div>${chips}</div>`;
+}
+function monthGrid(){ const d=calCursor, year=d.getFullYear(), month=d.getMonth();
+  const startPad=new Date(year,month,1).getDay(); const dim=new Date(year,month+1,0).getDate();
+  const todayIso=iso(new Date()); let cells=DOW.map(w=>`<div class="caldow">${w}</div>`).join('');
+  for(let i=0;i<startPad;i++){ cells+=dayCell(new Date(year,month,1-(startPad-i)),true,todayIso); }
+  for(let day=1;day<=dim;day++){ cells+=dayCell(new Date(year,month,day),false,todayIso); }
+  const trail=(7-((startPad+dim)%7))%7;
+  for(let i=1;i<=trail;i++){ cells+=dayCell(new Date(year,month+1,i),true,todayIso); }
+  return `<div class="calgrid">${cells}</div>`;
+}
+function eventRow(e){ return `<div class="dayev" onclick="nav('calEvent',{id:'${e.id}'})"><div class="tm">${e.time||'All day'}</div><div style="flex:1; min-width:0"><p class="it">${esc(e.title)}</p><p class="im">by ${e.by===ME?'you':esc(e.by)}${e.notes?' · '+esc(e.notes):''}</p></div></div>`; }
+function weekList(){ const s=weekStart(calCursor); let out=''; const todayIso=iso(new Date());
+  for(let i=0;i<7;i++){ const dd=new Date(s); dd.setDate(s.getDate()+i); const ds=iso(dd); const evs=eventsOn(ds);
+    out+=`<p class="seclabel" style="margin:14px 0 6px; ${ds===todayIso?'color:var(--brand);':''}">${DOW[dd.getDay()]} · ${MONTHS[dd.getMonth()].slice(0,3)} ${dd.getDate()}</p>`;
+    out+= evs.length ? evs.map(eventRow).join('') : `<p class="im" style="margin:0 0 4px 2px;">No events</p>`;
+  }
+  return out;
+}
+function dayView(){ const ds=iso(calCursor); const evs=eventsOn(ds);
+  if(!evs.length) return `<div class="empty">No events on this day.${canEditCal()?'<br>Tap “+ Add event” to create one.':''}</div>`;
+  return evs.map(eventRow).join('');
+}
+function saveEvent(){
+  const t=((document.getElementById('evTitle')||{}).value||'').trim();
+  if(!t){ alert('Please add an event title'); return; }
+  const date=(document.getElementById('evDate')||{}).value || iso(calCursor);
+  const time=(document.getElementById('evTime')||{}).value || '';
+  const notes=(document.getElementById('evNotes')||{}).value || '';
+  if(ctx.editing){ const e=calEvents.find(x=>x.id===ctx.id); if(e){ e.title=t; e.date=date; e.time=time; e.notes=notes; } }
+  else { calSeq++; calEvents.push({id:'cal'+calSeq, title:t, date:date, time:time, notes:notes, by:ME}); }
+  const p=date.split('-').map(Number); calCursor=new Date(p[0],p[1]-1,p[2]); calView='day';
+  reset('calendar');
+}
+function deleteEvent(id){ calEvents=calEvents.filter(e=>e.id!==id); reset('calendar'); }
+
+// --- Admin: move an item between folders via press-and-hold -----------------
+let pendingMove = null, suppressClick = false;
+function openItem(id, i){ if(suppressClick){ suppressClick=false; return; } nav('viewer', {cid:id, i:i}); }
+function openFolder(id){ if(suppressClick){ suppressClick=false; return; } nav('category', {id:id}); }
+
+// --- Drag-to-reorder home tiles ---------------------------------------------
+let dragState = null;
+function tileDown(e, idx){ dragState = {fromIdx:idx, el:e.currentTarget, startX:e.clientX, startY:e.clientY, active:false, target:idx, clone:null, offX:0, offY:0}; }
+function startMove(id, i){
+  if(!state.isAdmin) return;
+  // Suppress the click synthesized when the finger/mouse lifts after the hold,
+  // so releasing on a destination row doesn't instantly move the item.
+  suppressClick = true;
+  setTimeout(()=>{ suppressClick = false; }, 700);
+  pendingMove = {from:id, i:i};
+  nav('move');
+}
+function doMove(toId){
+  if(suppressClick){ suppressClick = false; return; }
+  if(!pendingMove) return;
+  const item = cat(pendingMove.from).items.splice(pendingMove.i, 1)[0];
+  pendingMove = null;
+  if(item) cat(toId).items.unshift(item);
+  reset('category', {id:toId});
+}
+let lpTimer = null, lpX = 0, lpY = 0;
+function lpStart(id, i, e){ if(!state.isAdmin) return; lpX=e.clientX; lpY=e.clientY; lpTimer=setTimeout(()=>{ lpTimer=null; startMove(id,i); }, 500); }
+function lpMove(e){ if(lpTimer && (Math.abs(e.clientX-lpX)>12 || Math.abs(e.clientY-lpY)>12)) lpEnd(); }
+function lpEnd(){ if(lpTimer){ clearTimeout(lpTimer); lpTimer=null; } }
+function lpAttrs(id, i){ return `onpointerdown="lpStart('${id}',${i},event)" onpointermove="lpMove(event)" onpointerup="lpEnd()" onpointerleave="lpEnd()"`; }
+
+// --- Edit/delete permission: admin OR the person who posted it --------------
+function canModify(it){ return state.isAdmin || (it.author||ME)===ME; }
+function deleteItem(locId, i){
+  const arr = cat(locId).items;
+  const it = arr[i];
+  if(it && it._id) favorites.delete(it._id);
+  arr.splice(i, 1);
+  reset('category', {id:locId});
+}
+
+// --- Admin: create a sub-folder inside a top-level folder -------------------
+function createSub(){
+  const n = ((document.getElementById('subName')||{}).value||'').trim();
+  if(!n){ alert('Please name the sub-folder'); return; }
+  const p = cat(ctx.parent);
+  if(!p.subfolders) p.subfolders = [];
+  subSeq++; const id = 'sub'+subSeq;
+  p.subfolders.push({id:id, title:n, items:[]});
+  reset('category', {id:id});
+}
+
+// Move to the previous (-1) / next (+1) item in the same folder, in place
+// (no new history entry, so Back still returns to the folder).
+function gotoSibling(dir){
+  if(current!=='viewer') return;
+  const c = cat(ctx.cid);
+  const n = ctx.i + dir;
+  if(n < 0 || n >= c.items.length) return;
+  ctx.i = n;
+  render('viewer');
+}
+
+function tagPicker(){
+  const taggable = FAMILY.filter(m=>m!==ME);
+  let h = `<label>Tag family members <span style="color:var(--muted); font-weight:400">(optional)</span></label>
+    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:4px;">`;
+  taggable.forEach(m=>{ const on = composeTags.includes(m);
+    h += `<div onclick="toggleTag('${m}',this)" style="padding:9px 15px; border-radius:999px; cursor:pointer; font-size:14px; font-weight:700; background:${on?'var(--brand)':'var(--brand-light)'}; color:${on?'#fff':'var(--brand-dark)'};">${m}</div>`; });
+  h += `</div><p class="sd" style="margin-top:6px">Tagged people see this under their tag icon at the top.</p>`;
+  return h;
+}
+function toggleTag(name, el){
+  const i = composeTags.indexOf(name);
+  if(i>=0){ composeTags.splice(i,1); el.style.background='var(--brand-light)'; el.style.color='var(--brand-dark)'; }
+  else { composeTags.push(name); el.style.background='var(--brand)'; el.style.color='#fff'; }
+}
+
+// Required folder dropdown for the create forms. No auto-selection — the user
+// must choose where the item lives.
+function folderSelect(selectedId){
+  let h = `<label>Folder <span style="color:var(--danger)">*</span></label><select id="destSelect">`;
+  h += `<option value="" ${selectedId?'':'selected'} disabled>Select a folder…</option>`;
+  allLocations().forEach(L=>{ h += `<option value="${L.id}" ${L.id===selectedId?'selected':''}>${esc(L.path)}</option>`; });
+  h += `</select>`;
+  return h;
+}
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function runSearch(q){
+  searchQuery = q;
+  const out = document.getElementById('searchResults'); if(!out) return;
+  const term = q.trim().toLowerCase();
+  if(!term){ out.innerHTML = `<div class="empty">Start typing to search your whole vault — every folder, every item.</div>`; return; }
+  const res = [];
+  allLocations().forEach(L=>L.items.forEach((it,i)=>{
+    const hay = [it.title, it.body, it.url, it.author, (it.tags||[]).join(' '), L.path].join(' ').toLowerCase();
+    if(hay.includes(term)) res.push({L, it, i});
+  }));
+  if(!res.length){ out.innerHTML = `<div class="empty">No matches for “${esc(q)}”.<br>Try a different word.</div>`; return; }
+  out.innerHTML = `<p class="im" style="margin:0 0 10px 2px">${res.length} result${res.length===1?'':'s'}</p>` +
+    res.map(r=>`<div class="item" onclick="nav('viewer',{cid:'${r.L.id}',i:${r.i}})">
+      ${svg(r.it.kind,r.it.kind)}
+      <div style="min-width:0"><p class="it">${esc(r.it.title)}</p><p class="im">${esc(r.L.path)} · ${r.it.kind} · by ${r.it.author===ME?'you':esc(r.it.author)}</p></div></div>`).join('');
+}
+
+function addFromCurrent(){
+  if(current==='category'){ state.destCat = ctx.id; nav('add',{catId:ctx.id}); }
+  else { nav('add'); }
+}
+
+function saveArticle(){
+  const kind = ctx.kind;
+  const t = ((document.getElementById('artTitle')||{}).value || '').trim() || (kind==='link'?'New link':'Untitled note');
+  const b = (document.getElementById('artBody')||{}).value || '';
+  const url = (document.getElementById('artUrl')||{}).value || '';
+  const label = kind==='link' ? 'Link' : 'Article';
+  if(ctx.editing){
+    const it = cat(ctx.cid).items[ctx.i];
+    it.title = t; it.body = b; if(kind==='link') it.url = url;
+    it.tags = [...composeTags];
+    it.meta = label+' · updated just now';
+    reset('viewer', {cid:ctx.cid, i:ctx.i});
+  } else {
+    const dest = (document.getElementById('destSelect')||{}).value || '';
+    if(!dest){ alert('Please choose a folder for this item.'); return; }
+    addItem(dest, {kind:kind, author:ME, title:t, body:b, url:(kind==='link'?url:undefined), tags:[...composeTags], meta:label+' · just now'});
+    reset('category', {id:dest});
+  }
+}
+function finishUpload(){
+  const dest = (document.getElementById('destSelect')||{}).value || '';
+  if(!dest){ alert('Please choose a folder before finishing.'); return; }
+  const t = ((document.getElementById('upTitle')||{}).value || '').trim() || ctx.name;
+  const b = (document.getElementById('upBody')||{}).value || '';
+  const label = ctx.kind==='video' ? 'Video' : ctx.kind==='image' ? 'Photo' : 'PDF';
+  const item = {kind:ctx.kind, author:ME, title:t, body:b, tags:[...composeTags], meta:label+' · just now'};
+  if(ctx.kind==='image'){
+    const n = cat(dest).items.filter(x=>x.kind==='image').length;
+    item.thumb = PHOTO_GRADIENTS[n % PHOTO_GRADIENTS.length];
+  }
+  addItem(dest, item);
+  reset('category', {id:dest});
+}
+function selectFolderIcon(ic){ newFolderName = (document.getElementById('folderName')||{}).value||''; newFolderIcon = ic; render('newFolder'); }
+function createFolder(){
+  const n = ((document.getElementById('folderName')||{}).value||'').trim();
+  if(!n){ alert('Please give your folder a name'); return; }
+  folderSeq++; const id = 'cust'+folderSeq;
+  const PALETTE = ['#0F766E','#B83280','#9A6700','#1D4ED8','#A21CAF','#15803D','#9F1239','#475569'];
+  const color = PALETTE[(folderSeq-1) % PALETTE.length];
+  CATEGORIES.push({id:id, title:n, icon:newFolderIcon, color:color, blurb:'Your folder', items:[], custom:true});
+  state.destCat = id; newFolderName=''; newFolderIcon='health';
+  reset('category', {id:id});
+}
+
+function render(screen, isBack){
+  current = screen;
+  const body = document.getElementById('body');
+  const title = document.getElementById('topTitle');
+  const back = document.getElementById('backBtn');
+  const home = document.getElementById('homeBtn');
+  const fab = document.getElementById('fab');
+  const set = document.getElementById('settingsBtn');
+  const tag = document.getElementById('tagBtn');
+  const search = document.getElementById('searchBtn');
+  back.style.display = stack.length ? 'flex' : 'none';
+  home.style.display = (screen==='home' || screen==='welcome') ? 'none' : 'flex';
+  tag.style.display = (screen!=='welcome' && state.connected) ? 'flex' : 'none';
+  search.style.display = (screen!=='welcome' && state.connected) ? 'flex' : 'none';
+  fab.style.display = 'none';
+  set.style.display = 'flex';
+  let html = '';
+
+  if(screen==='welcome'){
+    title.textContent='PassDown'; back.style.display='none'; set.style.display='none';
+    html = `<div class="pad" style="padding-top:40px; text-align:center;">
+      <div class="badge" style="width:84px;height:84px;margin:10px auto 20px;">${svgRaw('lock',64)}</div>
+      <div class="h1" style="text-align:center;">Your family's private vault</div>
+      <p class="sub" style="text-align:center;">Everything important — instructions, recipes, finances — kept safely in <b>your own</b> Google Drive. We never store your files.</p>
+      <button class="primary" onclick="state.connected=true; reset('home')">Connect Google Drive</button>
+      <button class="secondary" onclick="state.connected=true; reset('home')">Sign in with Apple</button>
+      <p class="protonote" style="margin-top:18px;">You're previewing a prototype — tapping connect just moves you in.</p>
+    </div>`;
+    setHint('This is the <b>first screen a new user sees</b>. Tap a connect button to enter the app.');
+  }
+
+  else if(screen==='home'){
+    title.textContent='PassDown';
+    fab.style.display = state.connected ? 'flex' : 'none';
+    if(!state.connected){
+      html += `<div class="banner connect"><p class="bt">Connect your cloud</p>
+        <p class="bd">PassDown keeps everything in your own Google Drive. Connect to get started.</p>
+        <button class="ba" onclick="state.connected=true; render('home')">Connect Google Drive</button></div>`;
+    } else {
+      html += `<div style="padding-top:14px"><span class="pill"><span class="dot"></span>Connected to Google Drive</span></div>`;
+    }
+    html += `<div class="pad"><div class="h1">Everything your family needs</div>
+      <p class="sub">Stored privately in your own cloud. Pick a folder to begin.</p>
+      <div class="grid">`;
+    if(favorites.size>0){
+      html += `<div class="tile" style="background:#CA8A04" onclick="nav('favorites')">
+        <div class="tile-top"><div class="tile-ic">${svgRaw('star',26,'#fff')}</div></div>
+        <p class="tile-t">Favorites</p></div>`;
+    }
+    CATEGORIES.forEach((c,idx)=>{
+      html += `<div class="tile" data-didx="${idx}" style="background:${c.color||'#1F5C8B'}" onpointerdown="tileDown(event,${idx})" onclick="openFolder('${c.id}')">
+        <div class="tile-top"><div class="tile-ic">${svgRaw(c.icon,26,'#fff')}</div>${c.custom?'<span class="tile-yours">yours</span>':''}</div>
+        <p class="tile-t">${c.title}</p></div>`;
+    });
+    html += `<div class="tile" style="background:#0E7490" onclick="nav('calendar')">
+        <div class="tile-top"><div class="tile-ic">${svgRaw('calendar',26,'#fff')}</div></div>
+        <p class="tile-t">Calendar</p></div>`;
+    html += `<div class="tile tile-new" onclick="nav('newFolder')">
+        <div class="tile-top"><div class="tile-ic">${svgRaw('plus',26,'#1F5C8B')}</div></div>
+        <p class="tile-t">New folder</p></div>`;
+    html += `</div>`;
+    html += `<div class="card" style="border-style:dashed; text-align:center; margin-top:14px;" onclick="nav('family')">
+       <p class="t" style="color:var(--brand)">${state.family?'Manage your Family Hub':'Unlock the Family Hub →'}</p>
+       <p class="d">${state.family? seatsUsed()+' of '+seatsTotal+' members':'Share this vault with up to 6 family members'}</p></div>`;
+    html += `</div>`;
+    setHint(state.connected
+      ? 'Tap a folder to open it, or <b>press and drag a folder tile</b> to reorder your home screen.'
+      : 'Home before connecting — note the <b>connect banner</b>. Tap it to see the connected state.');
+  }
+
+  else if(screen==='category'){
+    const c = cat(ctx.id);
+    title.textContent = c.title; fab.style.display='flex';
+    html = `<div class="pad">`;
+    if(c.isSub){ html += `<p class="im" style="cursor:pointer; margin:0 0 6px;" onclick="nav('category',{id:'${c.parent.id}'})">‹ ${esc(c.parent.title)}</p>`; }
+    html += `<div class="h1">${c.title}</div><p class="sub">${c.isSub ? ('In '+esc(c.parent.title)) : (c.blurb||'')}</p>`;
+
+    if(!c.isSub){
+      const subs = c.subfolders || [];
+      if(subs.length || state.isAdmin){
+        html += `<p class="seclabel">Folders</p>`;
+        subs.forEach(s=>{
+          html += `<div class="item" onclick="nav('category',{id:'${s.id}'})">${svgFolder(c.icon)}
+            <div style="flex:1; min-width:0"><p class="it">${esc(s.title)}</p><p class="im">${s.items.length} item${s.items.length===1?'':'s'}</p></div>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#5C6770" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>`;
+        });
+        if(state.isAdmin){ html += `<div class="item" style="border-style:dashed; justify-content:center;" onclick="nav('newSub',{parent:'${c.id}'})"><span style="color:var(--brand); font-weight:700;">+ New sub-folder</span></div>`; }
+        if(c.items.length || c.gallery) html += `<p class="seclabel">Items</p>`;
+      }
+    }
+
+    if(c.items.length===0){
+      const msg = c.gallery
+        ? 'No photos here yet.<br>Add a photo to start this album.'
+        : 'Nothing here yet.<br>Add an article, link, PDF, or video.';
+      html += `<div class="empty">${msg}<br><button class="primary" style="width:auto; margin-top:16px;" onclick="addFromCurrent()">Add something</button></div>`;
+    } else if(c.gallery){
+      html += `<div class="gallery">`;
+      c.items.forEach((it,i)=>{
+        html += `<div class="thumb" style="background:${it.thumb||'#cbd5e1'}" ${lpAttrs(c.id,i)} onclick="openItem('${c.id}',${i})"><div style="position:absolute; top:2px; right:2px;">${starHtml(it._id,{onPhoto:true})}</div><div class="cap">${esc(it.title)}</div></div>`;
+      });
+      html += `</div>`;
+    } else {
+      c.items.forEach((it,i)=>{
+        html += `<div class="item" ${lpAttrs(c.id,i)} onclick="openItem('${c.id}',${i})">
+          ${svg(it.kind,it.kind)}
+          <div style="flex:1; min-width:0"><p class="it">${it.title}</p><p class="im">${it.meta}</p></div>${starHtml(it._id)}</div>`;
+      });
+    }
+    html += `</div>`;
+    setHint(state.isAdmin
+      ? 'Tap an item to open it. <b>Press and hold</b> an item to move it to another folder. As admin you can add sub-folders.'
+      : (c.gallery ? 'A <b>photo gallery</b>. Tap any photo to view it.' : 'A <b>folder</b>. Tap an item to view it.'));
+  }
+
+  else if(screen==='viewer'){
+    const c = cat(ctx.cid); const it = c.items[ctx.i];
+    title.textContent = 'Item';
+    let media = '';
+    if(it.kind==='video'){ media = `<div style="background:#111; border-radius:16px; height:200px; display:flex; align-items:center; justify-content:center; margin-bottom:16px;"><div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="30" height="30" fill="#1F5C8B" stroke="none"><path d="M8 5v14l11-7z"/></svg></div></div>`; }
+    else if(it.kind==='pdf'){ media = `<div style="background:#FDEFE2; border-radius:16px; height:200px; display:flex; align-items:center; justify-content:center; margin-bottom:16px;">${svgRaw('pdf',54,'#B9770E')}</div>`; }
+    else if(it.kind==='link'){ media = `<div class="item" style="margin-bottom:16px;">${svg('link','link')}<div style="min-width:0"><p class="it">Opens in your browser</p><p class="im">${it.url||'example.com'}</p></div></div>`; }
+    else if(it.kind==='image'){ media = `<div style="background:${it.thumb||'#cbd5e1'}; border-radius:16px; height:300px; margin-bottom:16px;"></div>`; }
+    const author = it.author || ME;
+    const total = c.items.length;
+    const navrow = `<div class="navrow">
+      <button class="navchip" ${ctx.i<=0?'disabled':''} onclick="gotoSibling(-1)">‹ Previous</button>
+      <span class="im">${ctx.i+1} of ${total}</span>
+      <button class="navchip" ${ctx.i>=total-1?'disabled':''} onclick="gotoSibling(1)">Next ›</button></div>`;
+    const where = c.isSub ? (esc(c.parent.title)+' › '+esc(c.title)) : esc(c.title);
+    html = `<div class="pad">${navrow}${media}
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px;">
+        <div class="h1" style="font-size:22px;">${it.title}</div>
+        <div style="margin-top:2px">${starHtml(it._id,{big:true})}</div></div>
+      <p class="sub">${it.meta} · in ${where} · by ${author===ME?'you':author}</p>`;
+    if(it.body){
+      html += `<p style="font-size:17px; line-height:1.65; color:var(--ink); white-space:pre-wrap;">${it.body}</p>`;
+    } else if(it.kind==='article'){
+      html += `<p style="font-size:17px; line-height:1.65; color:var(--ink);">This is where the written instructions live. Family members open it any time.</p>`;
+    } else if(it.kind==='video' || it.kind==='pdf' || it.kind==='image'){
+      html += `<p style="font-size:17px; line-height:1.6; color:var(--muted);">The file streams from your personal Google Drive only when someone opens it — it's never copied onto PassDown's servers.</p>`;
+    }
+    if((it.tags||[]).length){
+      html += `<div class="savechip" style="margin-top:16px;">Tagged: <b>${it.tags.map(x=>x===ME?'you':x).join(', ')}</b></div>`;
+    }
+    const canMod = canModify(it);
+    const isText = it.kind==='article' || it.kind==='link';
+    if(isText && canMod){
+      html += `<button class="primary" onclick="nav('article',{kind:'${it.kind}',editing:true,cid:'${c.id}',i:${ctx.i}})">Edit</button>`;
+    }
+    if(canMod){
+      html += `<button class="secondary" style="color:var(--danger)" onclick="if(confirm('Delete this item? This removes it for the whole family.')) deleteItem('${c.id}',${ctx.i})">Delete</button>`;
+    } else {
+      html += `<div class="savechip" style="margin-top:18px;">Only <b>${author}</b> or a family admin can edit or delete this. You can always read it.</div>`;
+    }
+    html += `</div>`;
+    setHint((canMod
+      ? (state.isAdmin && author!==ME ? 'As <b>admin</b> you can edit or delete anyone’s items.' : 'You posted this, so you can <b>edit or delete</b> it.')
+      : 'Only the poster or an admin can change this — <b>read-only</b> to you.')
+      + ' Swipe or use Previous/Next to move between items.');
+  }
+
+  else if(screen==='add'){
+    title.textContent = 'Add to vault';
+    const opts = [
+      {k:'article', t:'Write an article', d:'Type instructions or notes', go:"nav('article',{kind:'article'})"},
+      {k:'link', t:'Save a link', d:'A website or contact URL', go:"nav('article',{kind:'link'})"},
+      {k:'pdf', t:'Upload a PDF', d:'Deeds, manuals, documents', go:"nav('upload',{kind:'pdf',name:'Document.pdf'})"},
+      {k:'video', t:'Record or upload a video', d:'A how-to clip from your camera roll', go:"nav('upload',{kind:'video',name:'Furnace-filter.mp4'})"},
+      {k:'image', t:'Add a photo', d:'A family photo from your camera roll', go:"nav('upload',{kind:'image',name:'Photo.jpg'})"},
+    ];
+    html = `<div class="pad">
+      <div class="h1" style="font-size:21px;">What would you like to add?</div>
+      <p class="sub">Choose a type. You'll pick the folder on the next step.</p>`;
+    opts.forEach(o=>{ html += `<div class="choice" onclick="${o.go}">${svg(o.k,o.k)}<div><p class="ct">${o.t}</p><p class="cd">${o.d}</p></div></div>`; });
+    html += `</div>`;
+    setHint('Pick a type. On the next screen you choose the <b>Folder</b> it goes into (required).');
+  }
+
+  else if(screen==='pickFolder'){
+    title.textContent = 'Choose a folder';
+    html = `<div class="pad"><p class="sub">Where should this go?</p>`;
+    allLocations().forEach(L=>{
+      const sel = L.id===state.destCat;
+      html += `<div class="item" style="${L.isSub?'margin-left:18px;':''}${sel?'border:2px solid var(--brand);':''}" onclick="state.destCat='${L.id}'; goBack()">
+        ${svgFolder(L.isSub?'notes':L.icon)}<div style="flex:1; min-width:0"><p class="it">${esc(L.isSub?L.title:L.path)}</p><p class="im">${L.isSub?'Sub-folder · ':''}${L.items.length} item${L.items.length===1?'':'s'}</p></div>
+        ${sel?'<span style="color:var(--brand); font-weight:700; font-size:18px">✓</span>':''}</div>`;
+    });
+    html += `<div class="card" style="border-style:dashed; text-align:center; margin-top:2px" onclick="nav('newFolder')">
+        <p class="t" style="color:var(--brand); font-size:17px">+ Create a new folder</p></div>`;
+    html += `</div>`;
+    setHint('Pick any folder or sub-folder — including ones you create. The check shows the current choice.');
+  }
+
+  else if(screen==='newFolder'){
+    title.textContent = 'New folder';
+    const choices = ['health','home','cash','recipe','notes','star','shield','paw','plane','link'];
+    let icons='';
+    choices.forEach(ic=>{ const sel = ic===newFolderIcon;
+      icons += `<div class="iconpick" onclick="selectFolderIcon('${ic}')" style="background:${sel?'var(--brand)':'var(--brand-light)'};">${svgRaw(ic,24, sel?'#fff':'#163F5F')}</div>`; });
+    html = `<div class="pad field">
+      <div class="h1">Create a folder</div><p class="sub">Make a section that fits your family — Medical, Pets, Travel, Passwords, anything.</p>
+      <label>Folder name</label><input id="folderName" value="${newFolderName.replace(/"/g,'&quot;')}" placeholder="e.g. Medical & Health" />
+      <label>Pick an icon</label>
+      <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:4px;">${icons}</div>
+      <button class="primary" onclick="createFolder()">Create folder</button>
+      <button class="secondary" onclick="newFolderName=''; goBack()">Cancel</button></div>`;
+    setHint('Create your <b>own folder</b>. Name it, pick an icon, and it joins your home screen.');
+  }
+
+  else if(screen==='newSub'){
+    const p = cat(ctx.parent);
+    title.textContent = 'New sub-folder';
+    html = `<div class="pad field">
+      <div class="h1">New sub-folder</div>
+      <p class="sub">Inside <b>${esc(p.title)}</b>. Name it whatever fits — e.g. “Car maintenance”, “Tax records”.</p>
+      <label>Sub-folder name</label><input id="subName" placeholder="e.g. Tax records" />
+      <div class="savechip" style="margin-top:14px;">Everyone in your family will see this sub-folder.</div>
+      <button class="primary" onclick="createSub()">Create sub-folder</button>
+      <button class="secondary" onclick="goBack()">Cancel</button></div>`;
+    setHint('Admin-only: create a <b>sub-folder</b>. It appears for every family member.');
+  }
+
+  else if(screen==='move'){
+    title.textContent = 'Move item';
+    const item = pendingMove ? cat(pendingMove.from).items[pendingMove.i] : null;
+    html = `<div class="pad"><div class="h1">Move to…</div>
+      <p class="sub">${item ? ('Moving <b>'+esc(item.title)+'</b>. Pick where it should live.') : 'Pick a destination.'}</p>`;
+    allLocations().forEach(L=>{
+      if(pendingMove && L.id===pendingMove.from) return;
+      html += `<div class="item" style="${L.isSub?'margin-left:18px;':''}" onclick="doMove('${L.id}')">
+        ${svgFolder(L.isSub?'notes':L.icon)}<div style="flex:1; min-width:0"><p class="it">${esc(L.isSub?L.title:L.path)}</p><p class="im">${L.isSub?'Sub-folder · ':''}${L.items.length} item${L.items.length===1?'':'s'}</p></div></div>`;
+    });
+    html += `<button class="secondary" onclick="pendingMove=null; goBack()">Cancel</button></div>`;
+    setHint('Choose where to move this item. This change is shared with the whole family.');
+  }
+
+  else if(screen==='article'){
+    const isLink = ctx.kind==='link';
+    const editing = !!ctx.editing;
+    const ex = editing ? cat(ctx.cid).items[ctx.i] : null;
+    title.textContent = editing ? (isLink?'Edit link':'Edit article') : (isLink ? 'Save a link' : 'Write article');
+    const tVal = ex ? ex.title.replace(/"/g,'&quot;') : '';
+    const bVal = ex ? (ex.body||'') : '';
+    if(!isBack) composeTags = editing ? [...(ex.tags||[])] : [];
+    html = `<div class="pad field">
+      ${editing ? `<div class="savechip">Editing in <b>${cat(ctx.cid).title}</b> · the poster or an admin can change this</div>` : ''}
+      <label>Title</label><input id="artTitle" value="${tVal}" placeholder="${isLink?'e.g. Susan Mills, CPA':'e.g. Where the water main shutoff is'}" />
+      <label>${isLink?'Web address':'Details'}</label>
+      ${isLink?`<input id="artUrl" value="${(ex&&ex.url?ex.url:'').replace(/"/g,'&quot;')}" placeholder="https://…" />`:`<textarea id="artBody" placeholder="Type the instructions your family will need…">${bVal}</textarea>`}
+      ${isLink?`<label>Description <span style="color:var(--muted); font-weight:400">(optional)</span></label><textarea id="artBody" placeholder="What is this link for? Who is it?">${bVal}</textarea>`:''}
+      ${editing ? '' : folderSelect(null)}
+      ${tagPicker()}
+      <button class="primary" onclick="saveArticle()">${editing?'Save changes':'Add to vault'}</button>
+      <button class="secondary" onclick="goBack()">Cancel</button></div>`;
+    setHint(editing
+      ? 'Editing an item you posted. Change the title or text and tap <b>Save changes</b> — it updates in place.'
+      : 'Fill in the details, then choose a <b>Folder</b> (required) for where it should live.');
+  }
+
+  else if(screen==='upload'){
+    title.textContent = 'Uploading';
+    if(!isBack) composeTags = [];
+    html = `<div class="pad field" style="padding-top:24px;">
+      <div style="display:flex; align-items:center; gap:13px; margin-bottom:6px;">${svg(ctx.kind,ctx.kind)}<div style="min-width:0"><p class="it" style="font-size:17px">${ctx.name}</p><p class="im" id="upmeta">Preparing…</p></div></div>
+      <div class="progwrap"><div class="progbar" id="prog"></div></div>
+      <p class="sub" id="uptext">Uploading to your Google Drive…</p>
+      <label>Title</label><input id="upTitle" value="${ctx.name.replace(/"/g,'&quot;')}" />
+      <label>Description <span style="color:var(--muted); font-weight:400">(optional)</span></label>
+      <textarea id="upBody" placeholder="${ctx.kind==='video'?'What does this video show? Anything to point out?':ctx.kind==='image'?'Who is in this photo? When and where was it taken?':'What is this document, and when would the family need it?'}"></textarea>
+      ${folderSelect(null)}
+      ${tagPicker()}
+      <div class="card" style="cursor:default; background:var(--brand-light); border:none; margin-top:14px;">
+        <p class="d" style="color:var(--brand-dark); font-weight:600;">You can keep typing while it uploads.</p>
+        <p class="d">Uploads continue in the background and pick up where they left off if you lose signal — one file at a time.</p></div>
+      <button class="primary" id="updone" style="display:none" onclick="finishUpload()">Done</button>
+      </div>`;
+    setHint('The <b>upload queue</b> in action — this is the resilient background uploader. Watch the bar fill.');
+    setTimeout(runUpload, 200);
+  }
+
+  else if(screen==='family'){
+    title.textContent = 'Family Hub';
+    if(!state.family){
+      html = `<div class="pad" style="text-align:center;">
+        <div class="lock">${svgRaw('lock',36)}</div>
+        <div class="h1" style="text-align:center;">Share with your family</div>
+        <p class="sub" style="text-align:center;">Invite up to 6 family members into the same private vault. One-time purchase — no subscription, yours for life.</p>
+        <div class="card" style="cursor:default; text-align:left;">
+          <p class="it">✓ 6 family seats included</p><p class="im">Everyone sees the same vault, in the admin's cloud. Add more seats any time.</p>
+          <p class="it" style="margin-top:10px">✓ Add, remove & reassign members</p><p class="im">You're the admin — manage who's in and who can edit.</p>
+          <p class="it" style="margin-top:10px">✓ Secure QR / link invites</p><p class="im">No passwords to share around.</p>
+          <p class="it" style="margin-top:10px">✓ One-time payment</p><p class="im">Lifetime access. No recurring fees.</p>
+        </div>
+        <button class="primary" onclick="state.family=true; render('family')">Unlock Family Hub</button>
+        <button class="secondary" onclick="goBack()">Maybe later</button></div>`;
+      setHint('The <b>premium gate</b>. Single-user is free; the Family Hub is a one-time unlock. Tap to see the unlocked view.');
+    } else {
+      const used = seatsUsed(), total = seatsTotal, free = total - used;
+      html = `<div class="pad">
+        <div class="h1" style="text-align:center;">Your Family Hub</div>
+        <p class="sub" style="text-align:center;">Have family scan this code, or send the link.</p>
+        <div class="qr" style="margin:0 auto;"></div>
+        <button class="primary" style="margin:14px 0 4px;${free<=0?'opacity:.5;':''}" onclick="${free>0?"alert('Prototype: invite link copied')":"alert('All seats are full — buy more seats to invite another member.')"}">Copy invite link</button>
+        <div class="card" style="cursor:default; text-align:left;">
+          <p class="it">${used} of ${total} seats used</p>
+          <p class="im">${free>0 ? free+' seat'+(free===1?'':'s')+' available to invite' : 'All seats full — add more to invite anyone new.'}</p>
+        </div>
+        <p class="it" style="font-size:14px; color:var(--muted); margin:18px 0 6px;">MEMBERS · ${used} of ${total} seats</p>
+        ${familyMembers.map(memberRow).join('')}
+        ${state.isAdmin ? `<div class="item" style="border-style:dashed; justify-content:center; ${free<=0?'opacity:.5;':''}" onclick="addMember()"><span style="color:var(--brand); font-weight:700;">+ Add member</span></div>` : ''}
+        ${state.isAdmin ? `<div class="card" style="text-align:left; margin-top:16px;" onclick="buySeats()">
+          <p class="t" style="color:var(--brand)">+ Buy more seats</p>
+          <p class="d">Your one-time purchase includes 6 seats. Add more any time — about $${SEAT_PRICE} each <span style="color:var(--muted)">(price not final)</span>.</p>
+        </div>` : ''}</div>`;
+      setHint(state.isAdmin
+        ? 'The <b>unlocked Family Hub</b>. As admin you can <b>add, remove, or reassign</b> members and <b>buy extra seats</b> beyond the 6 included.'
+        : 'The <b>unlocked Family Hub</b> as a member sees it — invite link and the member list, no management controls.');
+    }
+  }
+
+  else if(screen==='search'){
+    title.textContent = 'Search';
+    html = `<div class="pad field">
+      <input id="searchInput" value="${searchQuery.replace(/"/g,'&quot;')}" placeholder="Search everything — titles, notes, names…" oninput="runSearch(this.value)" />
+      <div id="searchResults" style="margin-top:14px;"></div></div>`;
+    setHint('Search runs across <b>every folder and item</b> — titles, descriptions, tags, even who posted it.');
+    setTimeout(()=>{ runSearch(searchQuery); const el=document.getElementById('searchInput'); if(el) el.focus(); }, 0);
+  }
+
+  else if(screen==='calendar'){
+    title.textContent = 'Calendar';
+    html = `<div class="pad">`;
+    if(calLinked){
+      html += `<div class="setrow" onclick="nav('calLink')"><span class="dot" style="width:11px;height:11px;"></span><div style="flex:1"><p class="st">Synced with ${calLinked==='google'?'Google':'Apple'} Calendar</p><p class="sd">New events sync automatically · tap to change</p></div></div>`;
+    } else {
+      html += `<div class="card" style="cursor:default; background:var(--brand-light); border:none;"><p class="d" style="color:var(--brand-dark); font-weight:700;">Link a calendar</p><p class="d">Connect Google or Apple Calendar so events sync for the whole family.</p>
+        <div style="display:flex; gap:8px; margin-top:10px;"><button class="navchip" onclick="setCalLink('google')">Google Calendar</button><button class="navchip" onclick="setCalLink('apple')">Apple Calendar</button></div></div>`;
+    }
+    html += `<div class="seg">${['day','week','month'].map(v=>`<button class="${calView===v?'on':''}" onclick="setCalView('${v}')">${v.charAt(0).toUpperCase()+v.slice(1)}</button>`).join('')}</div>`;
+    html += `<div class="pernav"><button class="navchip" onclick="calShift(-1)">‹</button><span class="lbl">${calLabel()}</span><button class="navchip" onclick="calShift(1)">›</button></div>`;
+    if(canEditCal()){
+      html += `<button class="primary" style="margin:0 0 14px;" onclick="nav('calAdd')">+ Add event</button>`;
+    } else {
+      html += `<div class="savechip" style="margin-bottom:14px;">Only admins can add or edit events. Ask your family admin for access.</div>`;
+    }
+    if(calView==='month') html += monthGrid();
+    else if(calView==='week') html += weekList();
+    else html += dayView();
+    if(state.isAdmin){
+      html += `<p class="seclabel" style="margin-top:24px;">Admin</p>
+        <div class="setrow" onclick="calPermission=(calPermission==='everyone'?'admin':'everyone'); render('calendar')"><div style="flex:1"><p class="st">Who can add or edit events</p><p class="sd">${calPermission==='everyone'?'Everyone in the family':'Admins only'}</p></div><span class="roletag">${calPermission==='everyone'?'Everyone':'Admins'}</span></div>`;
+    }
+    html += `</div>`;
+    setHint('An interactive <b>calendar</b>. Switch Day/Week/Month, use ‹ › to move, and tap a day. Admins set who can add/edit and which calendar is linked.');
+  }
+
+  else if(screen==='calLink'){
+    title.textContent = 'Link calendar';
+    const row = (p,label)=>`<div class="setrow" onclick="setCalLink('${p}')">${svgFolder('calendar')}<div style="flex:1"><p class="st">${label}</p><p class="sd">${calLinked===p?'Connected':'Tap to connect'}</p></div>${calLinked===p?'<span style="color:var(--brand); font-weight:700; font-size:18px">✓</span>':''}</div>`;
+    html = `<div class="pad"><div class="h1">Link a calendar</div>
+      <p class="sub">Connect a calendar so events you add here show up there too — and stay in sync for the family.</p>
+      ${row('google','Google Calendar')}
+      ${row('apple','Apple Calendar')}
+      ${calLinked?`<div class="setrow" onclick="setCalLink('none')"><div><p class="st" style="color:var(--danger)">Unlink</p><p class="sd">Stop syncing</p></div></div>`:''}</div>`;
+    setHint('Linking is simulated in the prototype — it shows how connecting Google or Apple Calendar would work.');
+  }
+
+  else if(screen==='calAdd'){
+    const editing = !!ctx.editing;
+    const e = editing ? calEvents.find(x=>x.id===ctx.id) : null;
+    title.textContent = editing ? 'Edit event' : 'Add event';
+    const dv = e ? e.date : iso(calCursor);
+    html = `<div class="pad field">
+      <label>Event title</label><input id="evTitle" value="${e?esc(e.title).replace(/"/g,'&quot;'):''}" placeholder="e.g. Family dinner" />
+      <label>Date</label><input id="evDate" type="date" value="${dv}" />
+      <label>Time <span style="color:var(--muted); font-weight:400">(optional)</span></label><input id="evTime" type="time" value="${e&&e.time?e.time:''}" />
+      <label>Notes <span style="color:var(--muted); font-weight:400">(optional)</span></label><textarea id="evNotes" placeholder="Location, details…">${e?esc(e.notes||''):''}</textarea>
+      ${calLinked
+        ? `<div class="savechip" style="margin-top:12px;">This will be added to your ${calLinked==='google'?'Google':'Apple'} Calendar automatically.</div>`
+        : `<div class="savechip" style="margin-top:12px;">No calendar linked — it saves here. <span onclick="nav('calLink')" style="color:var(--brand); font-weight:700; cursor:pointer">Link one</span> to auto-sync.</div>`}
+      <button class="primary" onclick="saveEvent()">${editing?'Save changes':'Add event'}</button>
+      <button class="secondary" onclick="goBack()">Cancel</button></div>`;
+    setHint('Add an event. If a calendar is linked, it auto-populates there for everyone.');
+  }
+
+  else if(screen==='calEvent'){
+    const e = calEvents.find(x=>x.id===ctx.id);
+    title.textContent = 'Event';
+    if(!e){ html = `<div class="pad"><div class="empty">Event not found.</div></div>`; }
+    else {
+      const p = e.date.split('-').map(Number); const d = new Date(p[0],p[1]-1,p[2]);
+      html = `<div class="pad"><div class="h1">${esc(e.title)}</div>
+        <p class="sub">${DOW_FULL[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}${e.time?(' · '+e.time):''}</p>
+        ${e.notes?`<p style="font-size:17px; line-height:1.6; color:var(--ink);">${esc(e.notes)}</p>`:''}
+        <div class="savechip" style="margin-top:14px;">Added by ${e.by===ME?'you':esc(e.by)}${calLinked?(' · on your '+(calLinked==='google'?'Google':'Apple')+' Calendar'):''}</div>`;
+      if(canEditCal()){
+        html += `<button class="primary" onclick="nav('calAdd',{editing:true,id:'${e.id}'})">Edit event</button>
+          <button class="secondary" style="color:var(--danger)" onclick="if(confirm('Delete this event?')) deleteEvent('${e.id}')">Delete event</button>`;
+      } else {
+        html += `<div class="savechip" style="margin-top:14px;">Only admins can edit or delete events.</div>`;
+      }
+      html += `</div>`;
+    }
+    setHint('Event details. Whoever has add/edit permission can change or remove it.');
+  }
+
+  else if(screen==='favorites'){
+    title.textContent = 'Favorites';
+    const res = [];
+    allLocations().forEach(L=>L.items.forEach((it,i)=>{ if(favorites.has(it._id)) res.push({L, it, i}); }));
+    html = `<div class="pad"><div class="h1">Favorites</div>
+      <p class="sub">Your starred items, gathered from every folder. Private to you — the original stays where it is.</p>`;
+    if(res.length===0){
+      html += `<div class="empty">No favorites yet.<br>Tap the star on any item to add it here.</div>`;
+    } else {
+      res.forEach(r=>{
+        html += `<div class="item" onclick="openItem('${r.L.id}',${r.i})">
+          ${svg(r.it.kind,r.it.kind)}
+          <div style="flex:1; min-width:0"><p class="it">${esc(r.it.title)}</p><p class="im">${esc(r.L.path)}</p></div>${starHtml(r.it._id)}</div>`;
+      });
+    }
+    html += `</div>`;
+    setHint('Your personal <b>Favorites</b> — starred items from anywhere. Unstar here to remove from this list.');
+  }
+
+  else if(screen==='tagged'){
+    title.textContent = 'Tagged on you';
+    const results = [];
+    allLocations().forEach(L=>L.items.forEach((it,i)=>{ if((it.tags||[]).includes(ME)) results.push({L, it, i}); }));
+    html = `<div class="pad"><div class="h1">You're tagged on</div>
+      <p class="sub">Items a family member flagged for your attention.</p>`;
+    if(results.length===0){
+      html += `<div class="empty">No one has tagged you yet.<br>When a family member tags you on something, it shows up here.</div>`;
+    } else {
+      results.forEach(r=>{
+        html += `<div class="item" onclick="nav('viewer',{cid:'${r.L.id}',i:${r.i}})">
+          ${svg(r.it.kind,r.it.kind)}
+          <div style="min-width:0"><p class="it">${r.it.title}</p><p class="im">${esc(r.L.path)} · by ${r.it.author===ME?'you':r.it.author}</p></div></div>`;
+      });
+    }
+    html += `</div>`;
+    setHint('Everything a family member tagged you on, in one place — reachable from the tag icon (top right) any time.');
+  }
+
+  else if(screen==='settings'){
+    title.textContent = 'Settings';
+    html = `<div class="pad"><div class="h1">Settings</div>
+      <div class="setrow" style="cursor:default">${svgFolder('link')}<div><p class="st">Google Drive</p><p class="sd">${state.connected?'Connected · you@email.com':'Not connected'}</p></div></div>
+      <div class="setrow" onclick="nav('family')">${svgFolder('home')}<div><p class="st">Family Hub</p><p class="sd">${state.family?'Active · '+seatsUsed()+' of '+seatsTotal+' members':'Not unlocked'}</p></div></div>
+      <div class="setrow" onclick="state.isAdmin=!state.isAdmin; render('settings')"><div style="flex:1"><p class="st">Preview as</p><p class="sd">${state.isAdmin?'Admin — can add sub-folders & move items':'Member — read/add only'}</p></div><span class="roletag">${state.isAdmin?'Admin':'Member'}</span></div>
+      <div class="setrow" style="cursor:default"><div><p class="st">Background uploads</p><p class="sd">On · resumes automatically</p></div></div>
+      <div class="setrow" onclick="if(confirm('Disconnect? (prototype)')){state.connected=false; reset('home');}"><div><p class="st" style="color:var(--danger)">Disconnect cloud</p><p class="sd">Sign out of Google Drive</p></div></div>
+      </div>`;
+    setHint('<b>Settings</b> — connection status, the Family Hub, and disconnect. Disconnecting shows the connect banner again.');
+  }
+
+  body.innerHTML = html;
+  body.scrollTop = 0;
+}
+
+function runUpload(){
+  const bar = document.getElementById('prog'); if(!bar) return;
+  const meta = document.getElementById('upmeta'); const text = document.getElementById('uptext'); const done = document.getElementById('updone');
+  let p = 0;
+  const total = ctx.kind==='video' ? '38.4 MB' : '1.2 MB';
+  const tick = setInterval(()=>{
+    if(current!=='upload'){ clearInterval(tick); return; }
+    p += ctx.kind==='video' ? 4 : 12;
+    if(p>=100){ p=100; clearInterval(tick);
+      text.innerHTML = '<b style="color:var(--success)">Saved to your Google Drive ✓</b>';
+      meta.textContent = total+' · 1 of 1 complete'; done.style.display='block';
+    } else { meta.textContent = Math.round(p/100* parseFloat(total))+' / '+total+' · 1 of 1'; }
+    bar.style.width = p+'%';
+  }, 280);
+}
+
+// Swipe / drag navigation between items in the viewer. Pointer events cover
+// both touch (phone) and mouse (desktop testing).
+(function(){
+  const el = document.getElementById('body');
+  let sx = null, sy = null;
+  el.addEventListener('pointerdown', e=>{ sx = e.clientX; sy = e.clientY; });
+  el.addEventListener('pointerup', e=>{
+    if(sx === null) return;
+    const dx = e.clientX - sx, dy = e.clientY - sy;
+    sx = null;
+    if(current !== 'viewer') return;
+    if(Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return; // horizontal only
+    gotoSibling(dx > 0 ? 1 : -1); // swipe right -> next, swipe left -> previous
+  });
+
+  // Drag-to-reorder home tiles (mouse + touch via pointer events).
+  document.addEventListener('pointermove', e=>{
+    if(!dragState) return;
+    const dx = e.clientX - dragState.startX, dy = e.clientY - dragState.startY;
+    if(!dragState.active){
+      if(Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      dragState.active = true; suppressClick = true;
+      const r = dragState.el.getBoundingClientRect();
+      dragState.offX = dragState.startX - r.left; dragState.offY = dragState.startY - r.top;
+      const c = dragState.el.cloneNode(true);
+      Object.assign(c.style, {position:'fixed', left:r.left+'px', top:r.top+'px', width:r.width+'px', height:r.height+'px', pointerEvents:'none', opacity:'0.92', transform:'scale(1.05)', zIndex:'999', boxShadow:'0 14px 34px rgba(0,0,0,.35)'});
+      document.body.appendChild(c); dragState.clone = c;
+      dragState.el.style.opacity = '0.3';
+    }
+    dragState.clone.style.left = (e.clientX - dragState.offX) + 'px';
+    dragState.clone.style.top = (e.clientY - dragState.offY) + 'px';
+    dragState.clone.style.display = 'none';
+    const under = document.elementFromPoint(e.clientX, e.clientY);
+    dragState.clone.style.display = '';
+    const tile = under && under.closest ? under.closest('[data-didx]') : null;
+    document.querySelectorAll('.tile.droptarget').forEach(t=>t.classList.remove('droptarget'));
+    if(tile){ dragState.target = parseInt(tile.getAttribute('data-didx'), 10); tile.classList.add('droptarget'); }
+  });
+  document.addEventListener('pointerup', ()=>{
+    if(!dragState) return;
+    const ds = dragState; dragState = null;
+    if(!ds.active) return;
+    if(ds.clone) ds.clone.remove();
+    ds.el.style.opacity = '';
+    document.querySelectorAll('.tile.droptarget').forEach(t=>t.classList.remove('droptarget'));
+    const from = ds.fromIdx, to = ds.target;
+    if(from !== to && to >= 0 && to < CATEGORIES.length){
+      const moved = CATEGORIES.splice(from, 1)[0];
+      CATEGORIES.splice(to, 0, moved);
+    }
+    render('home');
+    setTimeout(()=>{ suppressClick = false; }, 60);
+  });
+})();
+
+ensureIds();
+reset('welcome');
+</script>
